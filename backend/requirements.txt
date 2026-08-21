@@ -5,4 +5,5 @@ httpx
 pydantic
 python-dotenv
 langchain-core
+fastapi[standard]
 langchain-openai
