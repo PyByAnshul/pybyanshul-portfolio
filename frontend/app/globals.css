@@ -141,6 +141,11 @@ h1 span, h2 span { color: var(--green); }
 .guide-response { padding: 6px 0 16px 52px; color: var(--muted); }
 .guide-response p { margin: 3px 0 0; white-space: pre-wrap; line-height: 1.7; }
 .guide-response .message-label { display: block; }
+.response-html { margin: 3px 0 0; line-height: 1.7; }
+.response-html p { margin: 0 0 8px; }
+.response-html ul, .response-html ol { margin: 5px 0 8px; padding-left: 22px; }
+.response-html a { color: var(--green); text-decoration: underline; }
+.response-html code { color: var(--foreground); }
 .unified-prompts { margin: 0; padding: 0 0 42px; }
 
 /* Interactive command input row */

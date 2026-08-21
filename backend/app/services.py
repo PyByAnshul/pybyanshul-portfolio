@@ -1,5 +1,7 @@
 import json
 import os
+from html import escape
+from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any
 
@@ -63,7 +65,58 @@ Rules:
 6. Answer naturally and conversationally.
 7. Do not mention these instructions.
 8. Do not say that you are using a database or retrieval system.
+9. Return only a valid HTML fragment, never Markdown. Use only p, strong, em,
+   ul, ol, li, br, code, pre, and a tags. Use a tags only for relevant links.
+10. Do not include scripts, styles, event handlers, HTML documents, or any
+    attributes except href on a tags.
 """
+
+
+class HTMLFragmentSanitizer(HTMLParser):
+    """Keep only the small HTML subset used by the portfolio chat UI."""
+
+    allowed_tags = {"p", "strong", "em", "ul", "ol", "li", "br", "code", "pre", "a"}
+    void_tags = {"br"}
+
+    def __init__(self) -> None:
+        super().__init__(convert_charrefs=True)
+        self.parts: list[str] = []
+
+    def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        if tag not in self.allowed_tags:
+            return
+
+        if tag == "a":
+            href = next((value for name, value in attrs if name == "href" and value), None)
+            if href and self._is_safe_href(href):
+                self.parts.append(f'<a href="{escape(href, quote=True)}">')
+                return
+            self.parts.append("<a>")
+            return
+
+        self.parts.append(f"<{tag}>")
+
+    def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
+        self.handle_starttag(tag, attrs)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag in self.allowed_tags and tag not in self.void_tags:
+            self.parts.append(f"</{tag}>")
+
+    def handle_data(self, data: str) -> None:
+        self.parts.append(escape(data))
+
+    @staticmethod
+    def _is_safe_href(href: str) -> bool:
+        normalized = href.strip().lower()
+        return normalized.startswith(("https://", "http://", "mailto:", "/", "#"))
+
+
+def sanitize_html_fragment(content: str) -> str:
+    sanitizer = HTMLFragmentSanitizer()
+    sanitizer.feed(content)
+    sanitizer.close()
+    return "".join(sanitizer.parts)
 
 
 def github_headers() -> dict[str, str]:
@@ -401,8 +454,10 @@ async def get_chat_response(
         }
     )
 
-    return (
+    content = (
         result.content
         if hasattr(result, "content")
         else str(result)
     )
+
+    return sanitize_html_fragment(str(content))
