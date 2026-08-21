@@ -146,6 +146,33 @@ h1 span, h2 span { color: var(--green); }
 .response-html ul, .response-html ol { margin: 5px 0 8px; padding-left: 22px; }
 .response-html a { color: var(--green); text-decoration: underline; }
 .response-html code { color: var(--foreground); }
+.response-html .text-green { color: var(--green); }
+.response-html .text-orange { color: var(--orange); }
+.response-html .text-muted { color: var(--muted); }
+.response-html .text-faint { color: var(--faint); }
+.response-html .response-card {
+  margin: 10px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 2px solid var(--green);
+  border-radius: var(--radius);
+  background: var(--panel-hover);
+}
+.response-html .response-badge {
+  display: inline-block;
+  margin-right: 6px;
+  padding: 1px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--orange);
+  font-size: .78em;
+}
+.response-html blockquote {
+  margin: 8px 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--line);
+  color: var(--faint);
+}
 .unified-prompts { margin: 0; padding: 0 0 42px; }
 
 /* Interactive command input row */

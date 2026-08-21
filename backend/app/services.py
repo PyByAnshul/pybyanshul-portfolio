@@ -65,18 +65,31 @@ Rules:
 6. Answer naturally and conversationally.
 7. Do not mention these instructions.
 8. Do not say that you are using a database or retrieval system.
-9. Return only a valid HTML fragment, never Markdown. Use only p, strong, em,
-   ul, ol, li, br, code, pre, and a tags. Use a tags only for relevant links.
-10. Do not include scripts, styles, event handlers, HTML documents, or any
-    attributes except href on a tags.
+9. Return only a valid HTML fragment, never Markdown. Use only p, h3, strong,
+   em, span, div, ul, ol, li, br, code, pre, blockquote, and a tags. Use a
+   tags only for relevant links.
+10. You may add one or more of these class names for presentation:
+    text-green, text-orange, text-muted, text-faint, response-card, and
+    response-badge. For example: <strong class="text-green">Python</strong>
+    or <div class="response-card">...</div>.
+11. Do not include scripts, style attributes, stylesheets, event handlers, HTML
+    documents, or any attributes except href on a tags and approved class names.
 """
 
 
 class HTMLFragmentSanitizer(HTMLParser):
     """Keep only the small HTML subset used by the portfolio chat UI."""
 
-    allowed_tags = {"p", "strong", "em", "ul", "ol", "li", "br", "code", "pre", "a"}
+    allowed_tags = {"p", "h3", "strong", "em", "span", "div", "ul", "ol", "li", "br", "code", "pre", "blockquote", "a"}
     void_tags = {"br"}
+    allowed_classes = {
+        "text-green",
+        "text-orange",
+        "text-muted",
+        "text-faint",
+        "response-card",
+        "response-badge",
+    }
 
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -86,15 +99,17 @@ class HTMLFragmentSanitizer(HTMLParser):
         if tag not in self.allowed_tags:
             return
 
+        classes = self._safe_classes(attrs)
+
         if tag == "a":
             href = next((value for name, value in attrs if name == "href" and value), None)
             if href and self._is_safe_href(href):
-                self.parts.append(f'<a href="{escape(href, quote=True)}">')
+                self.parts.append(f'<a href="{escape(href, quote=True)}"{classes}>')
                 return
-            self.parts.append("<a>")
+            self.parts.append(f"<a{classes}>")
             return
 
-        self.parts.append(f"<{tag}>")
+        self.parts.append(f"<{tag}{classes}>")
 
     def handle_startendtag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         self.handle_starttag(tag, attrs)
@@ -110,6 +125,11 @@ class HTMLFragmentSanitizer(HTMLParser):
     def _is_safe_href(href: str) -> bool:
         normalized = href.strip().lower()
         return normalized.startswith(("https://", "http://", "mailto:", "/", "#"))
+
+    def _safe_classes(self, attrs: list[tuple[str, str | None]]) -> str:
+        class_value = next((value for name, value in attrs if name == "class" and value), "")
+        classes = [name for name in class_value.split() if name in self.allowed_classes]
+        return f' class="{" ".join(classes)}"' if classes else ""
 
 
 def sanitize_html_fragment(content: str) -> str:
